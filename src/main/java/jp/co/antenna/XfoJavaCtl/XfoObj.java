@@ -7,6 +7,8 @@ package jp.co.antenna.XfoJavaCtl;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.stream.StreamSource;
@@ -70,48 +72,38 @@ public class XfoObj {
 		} catch (Exception e) {
 			throw new XfoException(4, 0, "Could not determine OS");
 		}
-		String axf_home;
+		String axf_home  = null;
 		int axf_ver = 1;
 		try {
-			axf_home = System.getenv("AHF60_64_HOME");
-			if ((axf_home == null) || axf_home.equals(""))
-				axf_home = System.getenv("AHF60_HOME");
-			if ((axf_home == null) || axf_home.equals(""))
-				axf_home = System.getenv("AHF53_64_HOME");
-			if ((axf_home == null) || axf_home.equals(""))
-				axf_home = System.getenv("AHF53_HOME");
-			if ((axf_home == null) || axf_home.equals(""))
-				axf_home = System.getenv("AHF52_64_HOME");
-			if ((axf_home == null) || axf_home.equals(""))
-				axf_home = System.getenv("AHF52_HOME");
-			if ((axf_home == null) || axf_home.equals(""))
-				axf_home = System.getenv("AHF51_64_HOME");
-			if ((axf_home == null) || axf_home.equals(""))
-				axf_home = System.getenv("AHF51_HOME");
-			if ((axf_home == null) || axf_home.equals(""))
-				axf_home = System.getenv("AHF50_64_HOME");
-			if ((axf_home == null) || axf_home.equals(""))
-				axf_home = System.getenv("AHF50_HOME");
-			if ((axf_home == null) || axf_home.equals("")) {
-				axf_home = System.getenv("AXF43_64_HOME");
-				axf_ver = 0;
-			}
-			if ((axf_home == null) || axf_home.equals("")) {
-				axf_home = System.getenv("AXF43_HOME");
-				axf_ver = 0;
-			}
-			if ((axf_home == null) || axf_home.equals("")) {
-				axf_home = System.getenv("AXF42_HOME");
-				axf_ver = 0;
-			}
-			if ((axf_home == null) || axf_home.equals("")) {
-				axf_home = System.getenv("AXF41_HOME");
-				axf_ver = 0;
-			}
-			if ((axf_home == null) || axf_home.equals("")) {
-				axf_home = System.getenv("AXF4_HOME");
-				axf_ver = 0;
-			}
+            // Search for AHnn_64_HOME or AHnn_HOME
+            Pattern matchHome = Pattern.compile("^AHF([0-9]+)_HOME$");
+            Pattern match64Home = Pattern.compile("^AHF([0-9]+)_64_HOME$");
+            String ahHome = null;
+            int ahVer = 0;
+            boolean ah64 = false;
+            for (String env: System.getenv().keySet()) {
+                if (ahHome == null) {
+                    Matcher match = matchHome.matcher(env);
+                    if (match.find()) {
+                        ahHome = env;
+                        ahVer = Integer.parseInt(match.group(1));
+                    }
+                }
+                Matcher match = match64Home.matcher(env);
+                if (match.find()) {
+                    ahHome = env;
+                    ahVer = Integer.parseInt(match.group(1));
+                    ah64 = true;
+                }
+            }
+
+            if (ahHome != null) {
+                axf_home = System.getenv(ahHome);
+                if (ahVer <= 43) {
+                    axf_ver = 0;
+                }
+            }
+
 			if ((axf_home == null) || axf_home.equals(""))
 				throw new Exception();
 		} catch (Exception e) {
